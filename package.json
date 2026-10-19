@@ -1,0 +1,55 @@
+{
+  "name": "dsh-pro-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Extensible Pro Tools pack for DeepSeek Harness: per-feature switches in Settings, and a desktop tray that follows them.",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "tray"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "features/",
+    "lib/",
+    "cordis.patch.yml",
+    "locale/",
+    "icon.svg",
+    "desktop/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "scripts": {
+    "build": "node scripts/build-catalog.mjs",
+    "check": "node scripts/check.mjs && node scripts/build-catalog.mjs --check",
+    "hook:apply": "node desktop/apply-desktop-hook.mjs",
+    "hook:check": "node desktop/apply-desktop-hook.mjs --check"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-general"
+      ]
+    }
+  }
+}

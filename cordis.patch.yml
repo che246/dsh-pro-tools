@@ -1,0 +1,11 @@
+# dsh-pro-tools: one bundle row that owns a feature registry, a Settings page,
+# and the tray state file the desktop shell reads.
+#
+# Adding a feature never touches this file: drop a module under features/ and
+# rebuild the browser catalog. That is the whole extension contract.
+- insert:
+    - id: pro-tools
+      name: dsh-pro-tools
+      config:
+        tray: true
+        features: {}
