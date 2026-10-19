@@ -1,9 +1,9 @@
 {
   "name": "dsh-pro-tools",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Extensible Pro Tools pack for DeepSeek Harness: per-feature switches in Settings, and a desktop tray that follows them.",
+  "description": "DeepSeek Harness desktop plugin bundle: a real Electron-main-process plugin for tray actions, plus a settings page whose switches drive it.",
   "license": "MIT",
   "keywords": [
     "dsh",

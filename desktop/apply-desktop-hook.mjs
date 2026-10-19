@@ -30,8 +30,12 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const hookSourcePath = join(here, 'tray-hook.js');
-const BEGIN = '// >>> dsh-pro-tools tray hook v1';
-const END = '// <<< dsh-pro-tools tray hook v1';
+const BEGIN = '// >>> dsh-pro-tools desktop host v2';
+const END = '// <<< dsh-pro-tools desktop host v2';
+/** Earlier injected regions this version supersedes; removed before inserting. */
+const SUPERSEDED = [
+  ['// >>> dsh-pro-tools tray hook v1', '// <<< dsh-pro-tools tray hook v1'],
+];
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(`--${name}`);
@@ -93,8 +97,23 @@ const anchors = [
   '\tconst backgroundNotice = process.platform === "win32"',
 ];
 
-const hasRegion = original.includes(BEGIN) && original.includes(END);
-const state = { removedLegacy: 0, inserted: false, replaced: false };
+const state = { removedLegacy: 0, removedRegions: 0, inserted: false, replaced: false };
+const stripped = stripSuperseded(original);
+const hasRegion = stripped.includes(BEGIN) && stripped.includes(END);
+
+/** Remove regions written by earlier versions of this host. */
+function stripSuperseded(text) {
+  let next = text;
+  for (const [begin, end] of SUPERSEDED) {
+    const start = next.indexOf(begin);
+    const stop = next.indexOf(end, start);
+    if (start >= 0 && stop >= 0) {
+      next = next.slice(0, start) + next.slice(stop + end.length).replace(/^\r?\n/, '');
+      state.removedRegions += 1;
+    }
+  }
+  return next;
+}
 
 /** Remove the legacy fragments; count what actually changed. */
 function stripLegacy(text) {
@@ -162,14 +181,15 @@ function backup(text) {
 
 if (checkOnly) {
   console.log(`shell:   ${mainPath}`);
-  console.log(`hook:    ${hasRegion ? 'installed' : 'missing'}`);
+  console.log(`host:    ${hasRegion ? 'installed' : 'missing'}`);
   console.log(`legacy:  ${LEGACY.some((fragment) => original.includes(fragment) || original.includes(fragment.split('\n').join('\r\n'))) ? 'prototype edit still present' : 'clean'}`);
+  if (state.removedRegions > 0) console.log(`older:   ${String(state.removedRegions)} superseded region(s) present — re-run without --check`);
   if (hasRegion) {
-    const installed = original.slice(original.indexOf(BEGIN), original.indexOf(END) + END.length);
+    const installed = stripped.slice(stripped.indexOf(BEGIN), stripped.indexOf(END) + END.length);
     const current = hookSource.replace(/\r\n/g, '\n');
     console.log(`version: ${installed.replace(/\r\n/g, '\n') === current ? 'current' : 'stale — re-run without --check'}`);
   }
-  process.exitCode = hasRegion ? 0 : 1;
+  process.exitCode = hasRegion && state.removedRegions === 0 ? 0 : 1;
   process.exit();
 }
 
@@ -178,7 +198,9 @@ if (uninstall) {
     console.log('hook 未安装，无需卸载。');
     process.exit(0);
   }
-  const next = original.slice(0, original.indexOf(BEGIN)) + original.slice(original.indexOf(END) + END.length);
+  const removed = stripped;
+  const startAt = removed.indexOf(BEGIN);
+  const next = removed.slice(0, startAt) + removed.slice(removed.indexOf(END, startAt) + END.length);
   if (!dryRun) {
     const result = syntaxCheck(next);
     if (!result.ok) {
@@ -194,7 +216,7 @@ if (uninstall) {
   process.exit(0);
 }
 
-let next = stripLegacy(original);
+let next = stripLegacy(stripped);
 if (hasRegion) {
   next = replaceRegion(next);
   state.replaced = true;
