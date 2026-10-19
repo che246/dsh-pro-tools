@@ -26,11 +26,18 @@ DeepSeek Harness **桌面端插件包**：一个 Cordis bundle（设置页 + 开
 ### 1. 装 bundle（设置页 + 开关状态）
 
 ```powershell
-# 让 agent 调插件管理器，或直接：
-#   plugin_manager  action=install_bundle  target="<绝对路径>\dsh-pro-tools"
+# 一条命令：打包 → 写入 profile 的 dependencies + dsh.profile.bundles → pnpm install
+node scripts/install-to-profile.mjs
+
+# 或者手工：
+npm pack --pack-destination "$env:USERPROFILE\.dsh\local-plugins"
+# 然后在 profile package.json 里加依赖 file:...\dsh-pro-tools-<版本>.tgz，
+# 并把 "dsh-pro-tools" 加进 dsh.profile.bundles，最后在 profile 里 pnpm install
 ```
 
-安装后 profile 里多一行 `pro-tools`，设置页出现「增强工具」，`~/.dsh/pro-tools/state.json` 与 `desktop/plugin.cjs` 立刻被写入。
+装好后插件页（设置 → 插件）会列出 **dsh-pro-tools**，profile 里多一行 `pro-tools`，`~/.dsh/pro-tools/state.json` 与 `desktop/plugin.cjs` 立刻被写入。
+
+> **不要用「目录依赖」安装**（`file:<仓库目录>` 或 `install_bundle target=<目录>`）：pnpm 会生成**相对**符号链接，而本机 profile 路径经过 junction（`C:\Users\...\.dsh` → `D:\Users\...\.dsh`），相对链接在别名路径下会断，loader 报 `cannot resolve profile bundle`。打包成 tarball 后包被物化进 profile，没有这个问题。
 
 ### 2. 装桌面宿主（一次性）
 
@@ -145,6 +152,23 @@ dsh-pro-tools/
 ---
 
 ## 五、故障排查
+
+### 插件页看不到 dsh-pro-tools
+
+插件页读的是 profile 的 `dependencies` 与 `dsh.profile.bundles`，不是 `cordis.patch.yml`。只靠一行手写 patch 能跑起来，但不会出现在清单里：
+
+```powershell
+# 检查清单里到底有没有
+#   plugin_manager action=list_bundles
+# 检查 profile manifest
+node -e "const j=require('C:/Users/Administrator/.dsh/profiles/desktop/package.json');console.log(j.dependencies, j.dsh.profile.bundles)"
+```
+
+缺条目就按上面「安装」重新走一遍 `scripts/install-to-profile.mjs`。
+
+### `cannot resolve profile bundle "<name>"`
+
+目录依赖 + profile 路径别名（junction）导致的相对符号链接断裂。改用 tarball 安装（见上），并把 `node_modules/<name>` 那个悬空链接删掉再装。
 
 ### `ERR_PNPM_TARBALL_INTEGRITY`：profile 装啥都失败
 

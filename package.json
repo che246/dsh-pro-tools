@@ -1,6 +1,6 @@
 {
   "name": "dsh-pro-tools",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "DeepSeek Harness desktop plugin bundle: a real Electron-main-process plugin for tray actions, plus a settings page whose switches drive it.",
@@ -16,7 +16,9 @@
     ".": "./index.js",
     "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json",
+    "./desktop/plugin.cjs": "./desktop/plugin.cjs"
   },
   "files": [
     "index.js",
