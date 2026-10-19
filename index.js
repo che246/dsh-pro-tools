@@ -20,7 +20,7 @@
 
 import Schema from '@deepseek-ai/schemastery';
 import { FEATURES, resolveFeatureStates } from './features/index.js';
-import { deployDesktopPlugin, removeState, writeState } from './lib/state-file.js';
+import { deployDesktopPlugin, removeLegacyTrayState, removeState, writeState } from './lib/state-file.js';
 
 /** Config schema of the bundle row; the settings page renders its own controls over it. */
 export const Config = Schema.object({
@@ -46,6 +46,7 @@ export function apply(ctx, config) {
       return;
     }
     const deployed = deployDesktopPlugin();
+    removeLegacyTrayState();
     const written = writeState(states);
     const enabled = Object.entries(written.features).filter(([, on]) => on === true).map(([id]) => id);
     console.info(`dsh-pro-tools: desktop plugin ${deployed.changed ? 'updated' : 'ready'}, enabled: ${enabled.join(', ') || 'none'}`);
